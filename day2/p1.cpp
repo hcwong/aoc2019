@@ -4,7 +4,7 @@
 #include <vector>
 
 std::vector<int> split(std::string);
-bool processOpcode(std::vector<int>, int index);
+bool processOpcode(std::vector<int>&, int index);
 
 int main() {
     std::ifstream ifs ("input1.txt", std::ifstream::in);
@@ -42,7 +42,7 @@ std::vector<int> split(std::string s) {
     return nums;
 }
 
-bool processOpcode(std::vector<int> nums, int index) {
+bool processOpcode(std::vector<int> &nums, int index) {
     int opcode = nums[index];
     int pos1 = nums[index + 1];
     int pos2 = nums[index + 2];
