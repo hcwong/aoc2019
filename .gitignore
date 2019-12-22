@@ -1,2 +1,5 @@
 # All .out files
 *.out
+
+# VSCode settings
+.vscode
