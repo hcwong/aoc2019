@@ -23,13 +23,11 @@ int main() {
             std::cout << "Error occured";
             return 1;
         } else if (res == -2) {
-            std::cout << nums[0];
             std::cout << "99 encountered";
             return 1;
         }
-        i += res;
+        i = res;
     }
-    std::cout << nums[0];
 }
 
 std::vector<int> split(std::string s) {
@@ -79,22 +77,22 @@ int processOpcode(std::vector<int> &nums, int index) {
             std::cout << "Give me the input: ";
             std::cin >> input;
             nums[nums[index + 1]] = input;
-            return 2;
+            return index + 2;
         case 4: 
             std::cout << nums[nums[index + 1]];
             std::cout << '\n';
-            return 2;
+            return index + 2;
         case 5:
             if (values[0] != 0) {
-                return values[1] - index;
+                return values[1];
             } else {
-                return 3;
+                return index + 3;
             }
         case 6:
             if (values[0] == 0) {
-                return values[1] - index;
+                return values[1];
             } else {
-                return 3;
+                return index + 3;
             }
         case 7:
             if (values[0] < values[1]) {
@@ -110,13 +108,12 @@ int processOpcode(std::vector<int> &nums, int index) {
                 nums[nums[index + 3]] = 0;
             }
             break;
-        // Might want to consider changing these values
         case 99:
             return -2;
         default:
             return -1;
     }
-    return 4;
+    return index + 4;
 }
 
 // Gets the opcode and parameter codes
@@ -132,7 +129,7 @@ std::vector<int> getOpParam(int val) {
         val /= 10;
     }
 
-    if (opcode <= 2 || opcode >= 7) {
+    if (opcode <= 2 || opcode == 7 || opcode == 8) {
         while (paramCodes.size() < 4) {
             paramCodes.push_back(0);
         }
