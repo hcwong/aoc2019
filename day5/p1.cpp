@@ -17,14 +17,14 @@ int main() {
     int len = nums.size();
     int i = 0;
 
-    while (i + 3 < len) {
-        if (nums[i] == 99) {
-            break;
-        }
-
+    while (i < len) {
         int res = processOpcode(nums, i);
         if (res == -1) {
             std::cout << "Error occured";
+            return 1;
+        } else if (res == -2) {
+            std::cout << nums[0];
+            std::cout << "99 encountered";
             return 1;
         }
         i += res;
@@ -60,30 +60,32 @@ int processOpcode(std::vector<int> &nums, int index) {
 
     int sum, mult, input;
     switch(opcode) {
+        // Ignore the last digit
         case 1:
             sum = 0;
-            for (int i = 0; i < values.size() - 1; i++) {
+            for (int i = 0; i < 2; i++) {
                 sum += values[i];
             }
-            nums[values[values.size() - 1]] = sum;
+            nums[nums[index + 3]] = sum;
             break;
         case 2:
             mult = 1;
-            for (int i = 0; i < values.size() - 1; i++) {
+            for (int i = 0; i < 2; i++) {
                 mult *= values[i];
             }
-            nums[values[values.size() - 1]] = mult;
+            nums[nums[index + 3]] = mult;
             break;
         case 3:
             std::cout << "Give me the input: ";
             std::cin >> input;
-            nums[values[0]] = input;
+            nums[nums[index + 1]] = input;
             return 2;
         case 4: 
-            std::cout << values[0];
+            std::cout << nums[nums[index + 1]];
+            std::cout << '\n';
             return 2;
         case 99:
-            break;
+            return -2;
         default:
             return -1;
     }
@@ -93,7 +95,7 @@ int processOpcode(std::vector<int> &nums, int index) {
 // Gets the opcode and parameter codes
 std::vector<int> getOpParam(int val) {
     std::vector<int> paramCodes;
-    int opcode = val % 10;
+    int opcode = val % 100;
     paramCodes.push_back(opcode);
     val /= 100;
     
@@ -101,6 +103,16 @@ std::vector<int> getOpParam(int val) {
         int last = val % 10;
         paramCodes.push_back(last);
         val /= 10;
+    }
+
+    if (opcode == 1 || opcode == 2) {
+        while (paramCodes.size() < 4) {
+            paramCodes.push_back(0);
+        }
+    } else {
+        while (paramCodes.size() < 2) {
+            paramCodes.push_back(0);
+        }
     }
 
     return paramCodes;
