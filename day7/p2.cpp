@@ -15,14 +15,15 @@ struct amp {
   // 1: Use input
   // 0: Block
   int inputStatus;
+  std::vector<int> nums;
 };
 
 int runPermutation(std::vector<int> permutation);
-int runAmplitude(std::vector<int> &nums, amp *, int idx);
+int runAmplitude(amp *, int idx);
 std::vector<int> getOpParam(int val);
 std::vector<std::vector<int> > genPermutations(std::vector<int> array);
 std::vector<int> split(std::string s);
-int processOpcode(std::vector<int> &nums, amp *amp, int idx);
+int processOpcode(amp *amp, int idx);
 
 int main() {
     std::vector<int> values = {5, 6, 7, 8, 9};
@@ -66,33 +67,33 @@ std::vector<std::vector<int> > genPermutations(std::vector<int> array) {
 
 int runPermutation(std::vector<int> permutation) {
     amp amplitudes[5]; 
-
-
-    for (int i = 0; i < permutation.size(); i++) {
-        amplitudes[i] = {0, permutation[i], i, 0, 2};
-    }
-
     std::ifstream ifs ("input1.txt", std::ifstream::in);
     std::string line;
     getline(ifs, line);
     std::vector<int> nums;
     nums = split(line);
+
+    for (int i = 0; i < permutation.size(); i++) {
+        amplitudes[i] = {0, permutation[i], i, 0, 2, std::vector<int>(nums)};
+    }
+
     int idx = 0;
 
     while (true) {
-      int res = runAmplitude(nums, amplitudes, idx);
+      int res = runAmplitude(amplitudes, idx);
       if (res == -3 && idx == permutation.size() - 1) {
         break;
       }
       idx = (idx + 1) % 5;
     }
+    std::cout << "reee\n";
     return amplitudes[0].input;
 }
 
-int runAmplitude(std::vector<int> &nums, amp *amplitudes, int idx) {
-    int res = processOpcode(nums, amplitudes, idx);
+int runAmplitude(amp *amplitudes, int idx) {
+    int res = processOpcode(amplitudes, idx);
     while (res == 0) {
-      res = processOpcode(nums, amplitudes, idx);
+      res = processOpcode(amplitudes, idx);
     }
     return res;
 }
@@ -108,10 +109,11 @@ std::vector<int> split(std::string s) {
     return nums;
 }
 
-int processOpcode(std::vector<int> &nums, amp *amplitudes, int idx) {
+int processOpcode(amp *amplitudes, int idx) {
     amp *amplitude = &amplitudes[idx];
     amp nextAmplitude = amplitudes[(idx + 1) % 5];
-    int val = nums[amplitude->idx];
+
+    int val = amplitude->nums[amplitude->idx];
     std::vector<int> paramCodes = getOpParam(val);
     std::vector<int> values;
     int opcode = paramCodes[0];
@@ -119,9 +121,9 @@ int processOpcode(std::vector<int> &nums, amp *amplitudes, int idx) {
     for (int i = 1; i < paramCodes.size(); i++) {
         int parameter = paramCodes[i];
         if (parameter == 0) {
-            values.push_back(nums[nums[amplitude->idx + i]]);
+            values.push_back(amplitude->nums[amplitude->nums[amplitude->idx + i]]);
         } else {
-            values.push_back(nums[amplitude->idx + i]);
+            values.push_back(amplitude->nums[amplitude->idx + i]);
         }
     }
 
@@ -134,26 +136,25 @@ int processOpcode(std::vector<int> &nums, amp *amplitudes, int idx) {
             for (int i = 0; i < 2; i++) {
                 sum += values[i];
             }
-            nums[nums[amplitude->idx + 3]] = sum;
+            amplitude->nums[amplitude->nums[amplitude->idx + 3]] = sum;
             break;
         case 2:
             mult = 1;
             for (int i = 0; i < 2; i++) {
                 mult *= values[i];
             }
-            nums[nums[amplitude->idx + 3]] = mult;
+            amplitude->nums[amplitude->nums[amplitude->idx + 3]] = mult;
             break;
         case 3:
             if (amplitude->inputStatus == 0) {
               return -1;
             }
-            nums[nums[amplitude->idx + 1]] = amplitude->input == 2 ? amplitude->phase : amplitude->input;
+            amplitude->nums[amplitude->nums[amplitude->idx + 1]] = amplitude->input == 2 ? amplitude->phase : amplitude->input;
             amplitude->inputStatus--;
             amplitude->idx += 2;
             return 0;
         case 4:
-            std::cout << amplitude->idx << "\n";
-            nextAmplitude.input = nums[nums[amplitude->idx + 1]];
+            nextAmplitude.input = amplitude->nums[amplitude->nums[amplitude->idx + 1]];
             if (nextAmplitude.inputStatus < 2) {
               nextAmplitude.inputStatus = 1;
             }
@@ -177,19 +178,20 @@ int processOpcode(std::vector<int> &nums, amp *amplitudes, int idx) {
             return 0;
         case 7:
             if (values[0] < values[1]) {
-                nums[nums[amplitude->idx + 3]] = 1;
+                amplitude->nums[amplitude->nums[amplitude->idx + 3]] = 1;
             } else {
-                nums[nums[amplitude->idx + 3]] = 0;
+                amplitude->nums[amplitude->nums[amplitude->idx + 3]] = 0;
             }
             break;
         case 8:
             if (values[0] == values[1]) {
-                nums[nums[amplitude->idx + 3]] = 1;
+                amplitude->nums[amplitude->nums[amplitude->idx + 3]] = 1;
             } else {
-                nums[nums[amplitude->idx + 3]] = 0;
+                amplitude->nums[amplitude->nums[amplitude->idx + 3]] = 0;
             }
             break;
         case 99:
+            std::cout << amplitude->idx << "\n";
             return -3;
         default:
             return -4;
