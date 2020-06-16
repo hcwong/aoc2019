@@ -22,7 +22,7 @@ int main() {
     for (std::vector<char>::iterator it = line.begin(); it != line.end(); it++) {
         nums.push_back(*it - '0');
     }
-    
+
     std::cout << getMaxCounts(nums);
 }
 
