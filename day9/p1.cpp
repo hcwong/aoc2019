@@ -5,23 +5,23 @@
 #include "../utils.hpp"
 
 struct state {
-    int idx;
-    int relativeBase;
+    long idx;
+    long relativeBase;
 };
 
-int processOpcode(std::vector<int>&, state *s);
-std::vector<int> getOpParam(int);
+int processOpcode(std::vector<long>&, state *s);
+long accessNums(std::vector<long>& nums, long idx);
+std::vector<long> getOpParam(long);
 
 int main() {
-    std::vector<int> nums;
+    std::vector<long> nums;
 
     std::string line = getInput("input1.txt");
-    nums = split(line, ',');
-    int len = nums.size();
+    nums = splitLong(line, ',');
     state s = {0, 0};
 
-    while (s.idx < len) {
-        int res = processOpcode(nums, &s);
+    while (true) {
+        long res = processOpcode(nums, &s);
         if (res == -1) {
             std::cout << "Error occured";
             return 1;
@@ -32,55 +32,64 @@ int main() {
     }
 }
 
-int processOpcode(std::vector<int> &nums, state *s) {
-    int val = nums[s->idx];
-    std::vector<int> paramCodes = getOpParam(val);
-    std::vector<int> values;
-    int opcode = paramCodes[0];
+long accessNums(std::vector<long> &nums, long idx) {
+    if (idx >= nums.size()) {
+        return 0;
+    } else {
+        return nums[idx];
+    }
+}
+
+int processOpcode(std::vector<long> &nums, state *s) {
+    long val = accessNums(nums, s->idx);
+    std::vector<long> paramCodes = getOpParam(val);
+    std::vector<long> values;
+    long opcode = paramCodes[0];
 
     // Translates the param codes to actual values depending on the mode
-    for (int i = 1; i < paramCodes.size(); i++) {
-        int parameter = paramCodes[i];
+    for (long i = 1; i < paramCodes.size(); i++) {
+        long parameter = paramCodes[i];
         if (parameter == 0) {
             // Position mode
-            values.push_back(nums[nums[s->idx + i]]);
+            values.push_back(accessNums(nums, accessNums(nums, s->idx + i)));
         } else if (parameter == 1){
             // Immediate mode
-            values.push_back(nums[s->idx + i]);
+            values.push_back(accessNums(nums, s->idx + i));
         } else {
             // Relative mode
-            values.push_back() 
+            // Functions like position mode, but we take longo account the relativeBase
+            values.push_back(accessNums(nums, accessNums(nums, s->idx + i + s->relativeBase)));
         }
     }
 
-    int sum, mult, input;
+    long sum, mult, input;
     switch(opcode) {
         // Ignore the last digit
         case 1:
             sum = 0;
-            for (int i = 0; i < 2; i++) {
+            for (long i = 0; i < 2; i++) {
                 sum += values[i];
             }
-            nums[nums[s->idx + 3]] = sum;
+            nums[accessNums(nums, s->idx + 3)] = sum;
             s->idx += 4;
             return 0;
         case 2:
             mult = 1;
-            for (int i = 0; i < 2; i++) {
+            for (long i = 0; i < 2; i++) {
                 mult *= values[i];
             }
-            nums[nums[s->idx + 3]] = mult;
+            nums[accessNums(nums, s->idx + 3)] = mult;
             s->idx += 4;
             return 0;
         case 3:
             std::cout << "Give me the input: ";
             std::cin >> input;
-            nums[nums[s->idx + 1]] = input;
+            nums[accessNums(nums, s->idx + 1)] = input;
             s->idx += 2;
             return 0;
         case 4: 
-            std::cout << nums[nums[s->idx + 1]];
-            std::cout << '\n';
+            //std::cout << nums[nums[s->idx + 1]];
+            std::cout << values[0] << '\n';
             s->idx += 2;
             return 0;
         case 5:
@@ -99,17 +108,17 @@ int processOpcode(std::vector<int> &nums, state *s) {
             return 0;
         case 7:
             if (values[0] < values[1]) {
-                nums[nums[s->idx + 3]] = 1;
+                nums[accessNums(nums, s->idx + 3)] = 1;
             } else {
-                nums[nums[s->idx + 3]] = 0;
+                nums[accessNums(nums, s->idx + 3)] = 0;
             }
             s->idx += 4;
             return 0;
         case 8:
             if (values[0] == values[1]) {
-                nums[nums[s->idx + 3]] = 1;
+                nums[accessNums(nums, s->idx + 3)] = 1;
             } else {
-                nums[nums[s->idx + 3]] = 0;
+                nums[accessNums(nums, s->idx + 3)] = 0;
             }
             s->idx += 4;
             return 0;
@@ -126,14 +135,14 @@ int processOpcode(std::vector<int> &nums, state *s) {
 }
 
 // Gets the opcode and parameter codes
-std::vector<int> getOpParam(int val) {
-    std::vector<int> paramCodes;
-    int opcode = val % 100;
+std::vector<long> getOpParam(long val) {
+    std::vector<long> paramCodes;
+    long opcode = val % 100;
     paramCodes.push_back(opcode);
     val /= 100;
     
     while (val > 0) {
-        int last = val % 10;
+        long last = val % 10;
         paramCodes.push_back(last);
         val /= 10;
     }
