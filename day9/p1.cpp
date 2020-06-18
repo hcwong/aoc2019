@@ -2,23 +2,28 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include "../utils.hpp"
 
 struct state {
     long idx;
     long relativeBase;
+    std::map<long, long> numsMap;
 };
 
 int processOpcode(std::vector<long>&, state *s);
-long accessNums(std::vector<long>& nums, long idx);
+long accessNums(std::vector<long>& nums, long idx, state *s);
+void insertNums(std::vector<long> &nums, long idx, long val, state *s);
 std::vector<long> getOpParam(long);
 
 int main() {
     std::vector<long> nums;
+    std::map<long, long> numsMap;
 
     std::string line = getInput("input1.txt");
     nums = splitLong(line, ',');
-    state s = {0, 0};
+
+    state s = {0, 0, numsMap};
 
     while (true) {
         long res = processOpcode(nums, &s);
@@ -32,16 +37,31 @@ int main() {
     }
 }
 
-long accessNums(std::vector<long> &nums, long idx) {
+long accessNums(std::vector<long> &nums, long idx, state *s) {
     if (idx >= nums.size()) {
-        return 0;
+        // If found, get the value, else insert the value into the specified spot
+        if (s->numsMap.count(idx) == 1) {
+            auto it = s->numsMap.find(idx);
+            return it->second;
+        } else {
+            s->numsMap[idx] = 0;
+            return s->numsMap[idx];
+        }
     } else {
         return nums[idx];
     }
 }
 
+void insertNums(std::vector<long> &nums, long idx, long val, state *s) {
+    if (idx >= nums.size()) {
+        s->numsMap[idx] = val;
+    } else {
+        nums[idx] = val;
+    }
+}
+
 int processOpcode(std::vector<long> &nums, state *s) {
-    long val = accessNums(nums, s->idx);
+    long val = accessNums(nums, s->idx, s);
     std::vector<long> paramCodes = getOpParam(val);
     std::vector<long> values;
     long opcode = paramCodes[0];
@@ -51,14 +71,14 @@ int processOpcode(std::vector<long> &nums, state *s) {
         long parameter = paramCodes[i];
         if (parameter == 0) {
             // Position mode
-            values.push_back(accessNums(nums, accessNums(nums, s->idx + i)));
+            values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s), s));
         } else if (parameter == 1){
             // Immediate mode
-            values.push_back(accessNums(nums, s->idx + i));
+            values.push_back(accessNums(nums, s->idx + i, s));
         } else {
             // Relative mode
             // Functions like position mode, but we take longo account the relativeBase
-            values.push_back(accessNums(nums, accessNums(nums, s->idx + i + s->relativeBase)));
+            values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s) + s->relativeBase, s));
         }
     }
 
@@ -70,7 +90,7 @@ int processOpcode(std::vector<long> &nums, state *s) {
             for (long i = 0; i < 2; i++) {
                 sum += values[i];
             }
-            nums[accessNums(nums, s->idx + 3)] = sum;
+            insertNums(nums, accessNums(nums, s->idx + 3, s), sum, s);
             s->idx += 4;
             return 0;
         case 2:
@@ -78,13 +98,13 @@ int processOpcode(std::vector<long> &nums, state *s) {
             for (long i = 0; i < 2; i++) {
                 mult *= values[i];
             }
-            nums[accessNums(nums, s->idx + 3)] = mult;
+            insertNums(nums, accessNums(nums, s->idx + 3, s), mult, s);
             s->idx += 4;
             return 0;
         case 3:
             std::cout << "Give me the input: ";
             std::cin >> input;
-            nums[accessNums(nums, s->idx + 1)] = input;
+            insertNums(nums, accessNums(nums, s->idx + 1, s), input, s);
             s->idx += 2;
             return 0;
         case 4: 
@@ -108,17 +128,17 @@ int processOpcode(std::vector<long> &nums, state *s) {
             return 0;
         case 7:
             if (values[0] < values[1]) {
-                nums[accessNums(nums, s->idx + 3)] = 1;
+                insertNums(nums, accessNums(nums, s->idx + 3, s), 1, s);
             } else {
-                nums[accessNums(nums, s->idx + 3)] = 0;
+                insertNums(nums, accessNums(nums, s->idx + 3, s), 0, s);
             }
             s->idx += 4;
             return 0;
         case 8:
             if (values[0] == values[1]) {
-                nums[accessNums(nums, s->idx + 3)] = 1;
+                insertNums(nums, accessNums(nums, s->idx + 3, s), 1, s);
             } else {
-                nums[accessNums(nums, s->idx + 3)] = 0;
+                insertNums(nums, accessNums(nums, s->idx + 3, s), 0, s);
             }
             s->idx += 4;
             return 0;
