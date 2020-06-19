@@ -65,20 +65,28 @@ int processOpcode(std::vector<long> &nums, state *s) {
     std::vector<long> paramCodes = getOpParam(val);
     std::vector<long> values;
     long opcode = paramCodes[0];
+    long paramsWithInsert[5] = {1,2,3,7,8};
 
     // Translates the param codes to actual values depending on the mode
     for (long i = 1; i < paramCodes.size(); i++) {
         long parameter = paramCodes[i];
         if (parameter == 0) {
-            // Position mode
-            values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s), s));
+            // Write action
+            if (std::find(paramsWithInsert, std::end(paramsWithInsert), opcode) != std::end(paramsWithInsert) && i == paramCodes.size() - 1) {
+                values.push_back(accessNums(nums, s->idx + i, s));
+            } else {
+                values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s), s));
+            }
         } else if (parameter == 1){
             // Immediate mode
             values.push_back(accessNums(nums, s->idx + i, s));
         } else {
-            // Relative mode
-            // Functions like position mode, but we take longo account the relativeBase
-            values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s) + s->relativeBase, s));
+            // Write action
+            if (std::find(paramsWithInsert, std::end(paramsWithInsert), opcode) != std::end(paramsWithInsert) && i == paramCodes.size() - 1) {
+                values.push_back(accessNums(nums, s->idx + i, s) + s->relativeBase);
+            } else {
+                values.push_back(accessNums(nums, accessNums(nums, s->idx + i, s) + s->relativeBase, s));
+            }
         }
     }
 
@@ -90,7 +98,7 @@ int processOpcode(std::vector<long> &nums, state *s) {
             for (long i = 0; i < 2; i++) {
                 sum += values[i];
             }
-            insertNums(nums, accessNums(nums, s->idx + 3, s), sum, s);
+            insertNums(nums, values[2], sum, s);
             s->idx += 4;
             return 0;
         case 2:
@@ -98,13 +106,13 @@ int processOpcode(std::vector<long> &nums, state *s) {
             for (long i = 0; i < 2; i++) {
                 mult *= values[i];
             }
-            insertNums(nums, accessNums(nums, s->idx + 3, s), mult, s);
+            insertNums(nums, values[2], mult, s);
             s->idx += 4;
             return 0;
         case 3:
             std::cout << "Give me the input: ";
             std::cin >> input;
-            insertNums(nums, accessNums(nums, s->idx + 1, s), input, s);
+            insertNums(nums, values[0], input, s);
             s->idx += 2;
             return 0;
         case 4: 
@@ -128,17 +136,17 @@ int processOpcode(std::vector<long> &nums, state *s) {
             return 0;
         case 7:
             if (values[0] < values[1]) {
-                insertNums(nums, accessNums(nums, s->idx + 3, s), 1, s);
+                insertNums(nums, values[2], 1, s);
             } else {
-                insertNums(nums, accessNums(nums, s->idx + 3, s), 0, s);
+                insertNums(nums, values[2], 0, s);
             }
             s->idx += 4;
             return 0;
         case 8:
             if (values[0] == values[1]) {
-                insertNums(nums, accessNums(nums, s->idx + 3, s), 1, s);
+                insertNums(nums, values[2], 1, s);
             } else {
-                insertNums(nums, accessNums(nums, s->idx + 3, s), 0, s);
+                insertNums(nums, values[2], 0, s);
             }
             s->idx += 4;
             return 0;
