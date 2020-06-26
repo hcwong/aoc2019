@@ -9,26 +9,33 @@ struct state {
     long idx;
     long relativeBase;
     std::map<long, long> numsMap;
+
+    // Day 11 stuff
     std::map<long, std::map<long, int>> visited;
     long x;
     long y;
     long direction;
+    long cellsPainted;
+    bool isFirstOutput;
 };
 
 int processOpcode(std::vector<long>&, state *s);
 long accessNums(std::vector<long>& nums, long idx, state *s);
 void insertNums(std::vector<long> &nums, long idx, long val, state *s);
 std::vector<long> getOpParam(long);
+bool isTileBlack(state *s);
+void updateDirection(state *s, int value);
+void updatePaint(state *s, int newColor);
 
 int main() {
     std::vector<long> nums;
     std::map<long, long> numsMap;
     std::map<long, std::map<long, int>> visited;
 
-    std::string line = getInput("input1.txt");
+    std::string line = getInput("input.txt");
     nums = splitLong(line, ',');
 
-    state s = {0, 0, numsMap, visited, 0, 0};
+    state s = {0, 0, numsMap, visited, 0, 0, 0, 0, true};
 
     while (true) {
         long res = processOpcode(nums, &s);
@@ -36,8 +43,9 @@ int main() {
             std::cout << "Error occured";
             return 1;
         } else if (res == 1) {
-            std::cout << "99 encountered";
-            return 1;
+            std::cout << "99 encountered" << "\n";
+            std::cout << s.cellsPainted << "\n";
+            return 0;
         }
     }
 }
@@ -115,17 +123,20 @@ int processOpcode(std::vector<long> &nums, state *s) {
             s->idx += 4;
             return 0;
         case 3:
-            // TODO change
-            std::cout << "Give me the input: ";
-            std::cin >> input;
+            input = isTileBlack(s) ? 0 : 1;
             insertNums(nums, values[0], input, s);
             s->idx += 2;
-            return 3;
+            return 0;
         case 4: 
-            // TODO change
-            std::cout << values[0] << '\n';
+            if (s->isFirstOutput) {
+                s->isFirstOutput = false;
+                updatePaint(s, values[0]);
+            } else {
+                s->isFirstOutput = true;
+                updateDirection(s, values[0]);
+            }
             s->idx += 2;
-            return 4;
+            return 0;
         case 5:
             if (values[0] != 0) {
                 s->idx = values[1];
@@ -196,4 +207,59 @@ std::vector<long> getOpParam(long val) {
     }
 
     return paramCodes;
+}
+
+void updateDirection(state *s, int value) {
+    int change = value == 0 ? -1 : 1;
+    if (s->direction + change < 0) {
+        s->direction = 3;
+    } else {
+        s->direction = (s->direction + change) % 4;
+    }
+
+    if (s->direction == 0) {
+        s->x -= 1;
+    } else if (s->direction == 1) {
+        s->y += 1;
+    } else if (s->direction == 2) {
+        s->x += 1;
+    } else {
+        s->y -= 1;
+    }
+}
+
+bool isTileBlack(state *s) {
+    if (s->visited.count(s->x) == 0) {
+        return true;
+    }
+
+    // If not, check the y
+    if (s->visited.find(s->x)->second.count(s->y) == 0) {
+        return true;
+    }
+
+    // Else update 
+    int tile = s->visited.find(s->x)->second.find(s->y)->second;
+    return tile == 0;
+}
+
+void updatePaint(state *s, int newColor) {
+    if (s->visited.count(s->x) == 0) {
+        // First add the entry, then return true
+        std::map<long, int> innerMap;
+        innerMap[s->y] = newColor;
+        s->visited.insert(std::pair<long, std::map<long, int>>(s->x, innerMap));
+        s->cellsPainted++;
+        return;
+    }
+
+    // If not, check the y
+    if (s->visited.find(s->x)->second.count(s->y) == 0) {
+        s->visited.find(s->x)->second[s->y] = newColor;
+        s->cellsPainted++;
+        return;
+    }
+
+    // Else update 
+    s->visited.find(s->x)->second[s->y] = newColor;
 }
